@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxi Booking App</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    
+    <!-- Auth Section -->
+    <div id="auth-section" class="glass-container">
+        <!-- Form Đăng nhập -->
+        <div id="login-form-container" class="form-container">
+            <h2>Đăng Nhập</h2>
+            <p class="subtitle">Chào mừng trở lại! Vui lòng truy cập tài khoản của bạn.</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required placeholder="nhapemail@example.com">
+                </div>
+                <div class="input-group">
+                    <label for="login-password">Mật khẩu</label>
+                    <input type="password" id="login-password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-login">Đăng nhập</button>
+            </form>
+            <div class="toggle-form">
+                <span>Chưa có tài khoản?</span>
+                <a href="#" id="show-register">Đăng ký ngay</a>
+            </div>
+            <div id="login-error" class="error-msg hidden"></div>
+        </div>
+
+        <!-- Form Đăng ký -->
+        <div id="register-form-container" class="form-container hidden">
+            <h2>Đăng Ký</h2>
+            <p class="subtitle">Tạo tài khoản mới để trải nghiệm dịch vụ.</p>
+            <form id="register-form">
+                <div class="input-group">
+                    <label for="reg-name">Họ và Tên</label>
+                    <input type="text" id="reg-name" required placeholder="Nguyễn Văn A">
+                </div>
+                <div class="input-group">
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" required placeholder="nhapemail@example.com">
+                </div>
+                <div class="input-group">
+                    <label for="reg-phone">Số điện thoại</label>
+                    <input type="tel" id="reg-phone" required placeholder="0912345678">
+                </div>
+                <div class="input-group">
+                    <label for="reg-password">Mật khẩu</label>
+                    <input type="password" id="reg-password" required placeholder="••••••••">
+                </div>
+                <div class="input-group">
+                    <label for="reg-role">Vai trò</label>
+                    <select id="reg-role">
+                        <option value="PASSENGER">Hành khách (Passenger)</option>
+                        <option value="DRIVER">Tài xế (Driver)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-register">Đăng ký</button>
+            </form>
+            <div class="toggle-form">
+                <span>Đã có tài khoản?</span>
+                <a href="#" id="show-login">Đăng nhập ngay</a>
+            </div>
+            <div id="register-error" class="error-msg hidden"></div>
+        </div>
+    </div>
+
+    <!-- Main Application Section -->
+    <div id="app-section" class="hidden app-layout">
+        <header class="app-header glass-panel">
+            <div class="logo">
+                <h2>🚕 TaxiApp</h2>
+            </div>
+            <div class="user-info">
+                <span id="user-greeting">Xin chào, Khách</span>
+                <button id="btn-logout" class="btn btn-secondary btn-sm">Đăng xuất</button>
+            </div>
+        </header>
+
+        <main class="app-body">
+            <!-- Sidebar / Booking Form -->
+            <aside class="sidebar glass-panel">
+                <div id="passenger-dashboard" class="dashboard hidden">
+                    <h3>Đặt Xe Ngay</h3>
+                    <form id="booking-form">
+                        <div class="input-group">
+                            <label for="pickup-location">Điểm Đón</label>
+                            <input type="text" id="pickup-location" required placeholder="Ví dụ: Hồ Gươm, Hà Nội" autocomplete="off">
+                            <ul id="pickup-suggestions" class="suggestions hidden"></ul>
+                        </div>
+                        <div class="input-group">
+                            <label for="dropoff-location">Điểm Đến</label>
+                            <input type="text" id="dropoff-location" required placeholder="Ví dụ: Sân bay Nội Bài" autocomplete="off">
+                            <ul id="dropoff-suggestions" class="suggestions hidden"></ul>
+                        </div>
+                        <div class="trip-summary" id="trip-summary">
+                            <p>Khoảng cách: <span id="trip-distance">--</span> km</p>
+                            <p>Ước tính giá: <span id="trip-price">--</span> VNĐ</p>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="btn-book">Yêu cầu Đặt Xe</button>
+                    </form>
+                    <div id="booking-status" class="status-box hidden"></div>
+                </div>
+
+                <div id="driver-dashboard" class="dashboard hidden">
+                    <h3>Chuyến đi hiện tại / Có sẵn</h3>
+                    <div id="driver-status">
+                        <p class="text-muted">Tính năng lấy danh sách cuốc xe sẽ hiển thị tại đây.</p>
+                        <ul class="booking-list" id="available-bookings">
+                            <!-- Danh sách chuyến đi -->
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="recent-bookings">
+                    <h4>Lịch sử / Chuyến đi của bạn</h4>
+                    <ul id="my-bookings-list" class="booking-list">
+                        <!-- Danh sách booking chung -->
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- Map View -->
+            <section class="map-container glass-panel">
+                <div id="map"></div>
+                <!-- Loading overlay map -->
+                <div id="map-loading" class="map-loading hidden">
+                    <div class="spinner"></div>
+                    <p>Đang tải bản đồ...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Axios for HTTP requests -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Custom JS -->
+    <script src="/js/app.js"></script>
+</body>
+</html>

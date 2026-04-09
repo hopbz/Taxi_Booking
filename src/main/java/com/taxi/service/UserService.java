@@ -1,55 +1,52 @@
 package com.taxi.service;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+
 import com.taxi.dto.RegisterUserRequest;
 import com.taxi.dto.UserResponseDTO;
 import com.taxi.dto.auth.LoginRequest;
 import com.taxi.dto.auth.LoginResponse;
 import com.taxi.entity.User;
+import com.taxi.mapper.UserMapper;
 import com.taxi.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     public UserResponseDTO registerNewUser(RegisterUserRequest request) {
-        // 1. Map DTO (RegisterUserRequest) sang Entity (User)
-        User user = new User();
-        user.setFullName(request.getFullName());
-        user.setEmail(request.getEmail());
-        user.setPhone(request.getPhone());
-        user.setPassword(request.getPassword());
-        user.setRole(request.getRole());
+        // TODO: kiểm tra email trùng
+        // TODO: set role mặc định nếu không truyền
+        // TODO: mã hoá password spring security
+        User user = userMapper.toEntity(request);
 
-        // 2. Lưu vào DB
+        if (user.getRole() == null || user.getRole().isBlank()) {
+            user.setRole("PASSENGER");
+        }
+
         User savedUser = userRepository.save(user);
-
-        // 3. Map Entity (User) sang DTO (UserResponseDTO)
-        return toUserResponseDTO(savedUser);
+        return userMapper.toResponseDTO(savedUser);
     }
 
     public LoginResponse login(LoginRequest request) {
-        // TODO: Implement login logic with authentication
-        return new LoginResponse();
+        // TODO: thay bằng logic login hiện tại của dự án
+
+        throw new UnsupportedOperationException("Implement login logic here");
     }
 
     public UserResponseDTO getMe(Authentication authentication) {
-        // TODO: Implement getMe logic using authentication
-        return new UserResponseDTO();
-    }
+        // Nếu authentication.getName() là email/username
+        String email = authentication.getName();
 
-    private UserResponseDTO toUserResponseDTO(User user) {
-        UserResponseDTO responseDTO = new UserResponseDTO();
-        responseDTO.setId(user.getId());
-        responseDTO.setFullName(user.getFullName());
-        responseDTO.setEmail(user.getEmail());
-        responseDTO.setPhone(user.getPhone());
-        responseDTO.setRole(user.getRole());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return responseDTO;
+        return userMapper.toResponseDTO(user);
     }
 }

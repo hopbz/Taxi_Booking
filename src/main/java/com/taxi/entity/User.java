@@ -30,6 +30,6 @@ public class User {
     @Column(nullable = false, length = 30)
     private String role;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(unique = true, length = 20)
     private String phone;
 }
